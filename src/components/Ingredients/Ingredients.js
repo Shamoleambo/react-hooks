@@ -1,12 +1,27 @@
-import React, { useState, useCallback } from 'react'
+import React, { useReducer, useState, useCallback } from 'react'
 
 import IngredientForm from './IngredientForm'
 import IngredientList from './IngredientList'
 import Search from './Search'
 import ErrorModal from '../UI/ErrorModal'
 
+const ingredientReducer = (currentIngredients, action) => {
+  switch (action.type) {
+    case 'SET':
+      return action.ingredients
+    case 'ADD':
+      return [...currentIngredients, action.ingredient]
+    case 'DELETE':
+      return currentIngredients.filter(
+        (ingredient) => ingredient.id !== action.ingredientId
+      )
+    default:
+      throw new Error('Should not get here')
+  }
+}
+
 function Ingredients() {
-  const [ingredients, setIngredients] = useState([])
+  const [ingredients, dispatch] = useReducer(ingredientReducer, [])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState()
 
@@ -25,10 +40,10 @@ function Ingredients() {
       .then((response) => response.json())
       .then((responseData) => {
         setIsLoading(false)
-        setIngredients((prevState) => [
-          ...prevState,
-          { id: responseData.name, ...ingredient }
-        ])
+        dispatch({
+          type: 'ADD',
+          ingredient: { id: responseData.name, ...ingredient }
+        })
       })
   }
 
@@ -42,17 +57,16 @@ function Ingredients() {
     )
       .then((response) => {
         setIsLoading(false)
-        setIngredients((prevState) =>
-          prevState.filter((ingredient) => ingredient.id !== id)
-        )
+        dispatch({ type: 'DELETE', ingredientId: id })
       })
+
       .catch((error) => {
         setError('Something went wrong!')
       })
   }
 
   const filterIngredientsHandler = useCallback((filteredIngredients) => {
-    setIngredients(filteredIngredients)
+    dispatch({ type: 'SET', ingredients: filteredIngredients })
   }, [])
 
   const clearError = () => {
