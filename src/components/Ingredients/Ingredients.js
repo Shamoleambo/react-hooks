@@ -1,4 +1,4 @@
-import React, { useReducer, useState, useCallback } from 'react'
+import React, { useReducer, useCallback } from 'react'
 
 import IngredientForm from './IngredientForm'
 import IngredientList from './IngredientList'
@@ -20,13 +20,30 @@ const ingredientReducer = (currentIngredients, action) => {
   }
 }
 
+const httpReducer = (httpState, action) => {
+  switch (action.type) {
+    case 'SEND':
+      return { loading: true, error: null }
+    case 'RESPONSE':
+      return { ...httpState, loading: false }
+    case 'ERROR':
+      return { loading: false, error: action.errorData }
+    case 'CLEAR':
+      return { ...httpState, error: null }
+    default:
+      throw new Error("Shouldn't be reached")
+  }
+}
+
 function Ingredients() {
   const [ingredients, dispatch] = useReducer(ingredientReducer, [])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState()
+  const [httpState, dispatchHttpState] = useReducer(httpReducer, {
+    loading: false,
+    error: null
+  })
 
   function addIngredientHandler(ingredient) {
-    setIsLoading(true)
+    dispatchHttpState({ type: 'SEND' })
     fetch(
       'https://react-hooks-eb96c-default-rtdb.firebaseio.com/ingredients.json',
       {
@@ -39,7 +56,7 @@ function Ingredients() {
     )
       .then((response) => response.json())
       .then((responseData) => {
-        setIsLoading(false)
+        dispatchHttpState({ type: 'RESPONSE' })
         dispatch({
           type: 'ADD',
           ingredient: { id: responseData.name, ...ingredient }
@@ -48,7 +65,7 @@ function Ingredients() {
   }
 
   function removeIngredientHandler(id) {
-    setIsLoading(true)
+    dispatchHttpState({ type: 'SEND' })
     fetch(
       `https://react-hooks-eb96c-default-rtdb.firebaseio.com/ingredients/${id}.json`,
       {
@@ -56,12 +73,12 @@ function Ingredients() {
       }
     )
       .then((response) => {
-        setIsLoading(false)
+        dispatchHttpState({ type: 'RESPONSE' })
         dispatch({ type: 'DELETE', ingredientId: id })
       })
 
       .catch((error) => {
-        setError('Something went wrong!')
+        dispatchHttpState({ type: 'ERROR', errorData: 'Something went wrong' })
       })
   }
 
@@ -70,16 +87,17 @@ function Ingredients() {
   }, [])
 
   const clearError = () => {
-    setError(null)
-    setIsLoading(false)
+    dispatchHttpState({ type: 'CLEAR' })
   }
 
   return (
     <div className='App'>
-      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+      {httpState.error && (
+        <ErrorModal onClose={clearError}>{httpState.error}</ErrorModal>
+      )}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={isLoading}
+        loading={httpState.loading}
       />
 
       <section>
