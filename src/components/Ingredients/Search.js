@@ -1,29 +1,35 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 import Card from '../UI/Card'
 import './Search.css'
 
 const Search = React.memo(({ onLoadIngredients }) => {
   const [filter, setFilter] = useState('')
+  const filterInput = useRef()
 
   useEffect(() => {
-    const query =
-      filter.length === 0 ? '' : `?orderBy="title"&equalTo="${filter}"`
-    fetch(
-      `https://react-hooks-eb96c-default-rtdb.firebaseio.com/ingredients.json${query}`
-    )
-      .then((response) => response.json())
-      .then((responseData) => {
-        const loadedIngredients = []
-        for (let key in responseData) {
-          loadedIngredients.push({
-            id: key,
-            title: responseData[key].title,
-            amount: responseData[key].amount
+    setTimeout(() => {
+      if (filter === filterInput.current.value) {
+        const query =
+          filter.length === 0 ? '' : `?orderBy="title"&equalTo="${filter}"`
+
+        fetch(
+          `https://react-hooks-eb96c-default-rtdb.firebaseio.com/ingredients.json${query}`
+        )
+          .then((response) => response.json())
+          .then((responseData) => {
+            const loadedIngredients = []
+            for (let key in responseData) {
+              loadedIngredients.push({
+                id: key,
+                title: responseData[key].title,
+                amount: responseData[key].amount
+              })
+            }
+            onLoadIngredients(loadedIngredients)
           })
-        }
-        onLoadIngredients(loadedIngredients)
-      })
+      }
+    }, 500)
   }, [filter, onLoadIngredients])
 
   return (
@@ -34,6 +40,7 @@ const Search = React.memo(({ onLoadIngredients }) => {
           <input
             type='text'
             onChange={(event) => setFilter(event.target.value)}
+            ref={filterInput}
           />
         </div>
       </Card>
