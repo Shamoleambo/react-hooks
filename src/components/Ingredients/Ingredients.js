@@ -28,9 +28,16 @@ function Ingredients() {
   }
 
   function removeIngredientHandler(id) {
-    setIngredients((prevState) =>
-      prevState.filter((ingredient) => ingredient.id !== id)
-    )
+    fetch(
+      `https://react-hooks-eb96c-default-rtdb.firebaseio.com/ingredients/${id}.json`,
+      {
+        method: 'DELETE'
+      }
+    ).then((response) => {
+      setIngredients((prevState) =>
+        prevState.filter((ingredient) => ingredient.id !== id)
+      )
+    })
   }
 
   const filterIngredientsHandler = useCallback((filteredIngredients) => {
