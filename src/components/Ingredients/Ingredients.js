@@ -10,8 +10,14 @@ function Ingredients() {
   function addIngredientHandler(ingredient) {
     setIngredients((prevState) => [
       ...prevState,
-      { id: Math.random.toString(), ...ingredient }
+      { id: Math.random().toString(), ...ingredient }
     ])
+  }
+
+  function removeIngredientHandler(id) {
+    setIngredients((prevState) =>
+      prevState.filter((ingredient) => ingredient.id !== id)
+    )
   }
 
   return (
@@ -20,7 +26,10 @@ function Ingredients() {
 
       <section>
         <Search />
-        <IngredientList ingredients={ingredients} onRemoveItem={() => null} />
+        <IngredientList
+          ingredients={ingredients}
+          onRemoveItem={removeIngredientHandler}
+        />
       </section>
     </div>
   )
