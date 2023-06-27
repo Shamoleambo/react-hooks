@@ -1,29 +1,46 @@
 import { useReducer, useCallback } from 'react'
 
+const initialState = {
+  loading: false,
+  error: null,
+  data: null,
+  extra: null,
+  identifier: null
+}
+
 const httpReducer = (httpState, action) => {
   switch (action.type) {
     case 'SEND':
-      return { loading: true, error: null, data: null }
+      return {
+        loading: true,
+        error: null,
+        data: null,
+        extra: null,
+        identifier: action.identifier
+      }
     case 'RESPONSE':
-      return { ...httpState, loading: false, data: action.responseData }
+      return {
+        ...httpState,
+        loading: false,
+        data: action.responseData,
+        extra: action.extra
+      }
     case 'ERROR':
       return { loading: false, error: action.errorData }
     case 'CLEAR':
-      return { ...httpState, error: null }
+      return initialState
     default:
       throw new Error("Shouldn't be reached")
   }
 }
 
 const useHttp = () => {
-  const [httpState, dispatchHttpState] = useReducer(httpReducer, {
-    loading: false,
-    error: null,
-    data: null
-  })
+  const [httpState, dispatchHttpState] = useReducer(httpReducer, initialState)
 
-  const sendRequest = useCallback((url, method, body) => {
-    dispatchHttpState({ type: 'SEND' })
+  const clear = useCallback(() => dispatchHttpState({ type: 'CLEAR' }), [])
+
+  const sendRequest = useCallback((url, method, body, reqExtra, identifier) => {
+    dispatchHttpState({ type: 'SEND', identifier })
     fetch(url, {
       method,
       body,
@@ -33,7 +50,7 @@ const useHttp = () => {
     })
       .then((response) => response.json())
       .then((responseData) => {
-        dispatchHttpState({ type: 'RESPONSE', responseData })
+        dispatchHttpState({ type: 'RESPONSE', responseData, extra: reqExtra })
       })
       .catch((error) => {
         dispatchHttpState({ type: 'ERROR', errorData: 'Something went wrong' })
@@ -44,7 +61,10 @@ const useHttp = () => {
     isLoading: httpState.loading,
     data: httpState.data,
     error: httpState.error,
-    sendRequest
+    extra: httpState.extra,
+    identifier: httpState.identifier,
+    sendRequest,
+    clear
   }
 }
 
